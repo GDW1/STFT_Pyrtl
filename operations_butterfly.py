@@ -7,7 +7,7 @@ import helper_functions
 # index : which input sample it is
 # s: current stage
 # k: current butterfly number
-ms = []
+
 def butterfly(input_A, index, buffer_real, buffer_imag, s, k, mod_to):
     add_output = Complex(pyrtl.Register(bitwidth=16), pyrtl.Register(bitwidth=16))
     sub_output = Complex(pyrtl.Register(bitwidth=16), pyrtl.Register(bitwidth=16))
@@ -17,9 +17,15 @@ def butterfly(input_A, index, buffer_real, buffer_imag, s, k, mod_to):
     # We observe that N is a power of 2, or N = 2^n.
     # We can't do i % N/2^s in PyRTL, but we can do
     # i % N/2^s = i - (i / (N/2^s))
-    m <<= index & (mod_to - pyrtl.Const(1)) #- (m1 * m2)
-
+    mod_by = pyrtl.WireVector(bitwidth=16)
+    mod_by <<= (pyrtl.Const(16) - s)
+    m1 = (pyrtl.shift_right_logical(index, mod_by))
+    m2 = pyrtl.shift_left_logical(pyrtl.Const(1), mod_by)
+    m <<= index - (m1 * m2)
     input_B = Complex(pyrtl.WireVector(bitwidth=16), pyrtl.WireVector(bitwidth=16))
+
+    m_plus_one = pyrtl.WireVector(bitwidth=3)
+    m_plus_one <<= m + pyrtl.Const(1)
 
     input_B.real <<= buffer_real[m]
 
@@ -29,29 +35,29 @@ def butterfly(input_A, index, buffer_real, buffer_imag, s, k, mod_to):
 
     with pyrtl.conditional_assignment:
         with k == 0:
-            twiddle_real |= int(helper_functions.float_to_ieee_hp(1), 2)
-            twiddle_imag |= 0
+            twiddle_real |= pyrtl.Const(int(helper_functions.float_to_ieee_hp(1), 2))
+            twiddle_imag |= pyrtl.Const(int(helper_functions.float_to_ieee_hp(0), 2))
         with k == 1:
-            twiddle_real |= int(helper_functions.float_to_ieee_hp(0.923879532511), 2)
-            twiddle_imag |= int(helper_functions.float_to_ieee_hp(-0.382683432365), 2)
+            twiddle_real |= pyrtl.Const(int(helper_functions.float_to_ieee_hp(0.923879532511), 2))
+            twiddle_imag |= pyrtl.Const(int(helper_functions.float_to_ieee_hp(-0.382683432365), 2))
         with k == 2:
-            twiddle_real |= int(helper_functions.float_to_ieee_hp(0.707106781187), 2)
-            twiddle_imag |= int(helper_functions.float_to_ieee_hp(-0.707106781187), 2)
+            twiddle_real |= pyrtl.Const(int(helper_functions.float_to_ieee_hp(0.707106781187), 2))
+            twiddle_imag |= pyrtl.Const(int(helper_functions.float_to_ieee_hp(-0.707106781187), 2))
         with k == 3:
-            twiddle_real |= int(helper_functions.float_to_ieee_hp(0.382683432365), 2)
-            twiddle_imag |= int(helper_functions.float_to_ieee_hp(-0.923879532511), 2)
+            twiddle_real |= pyrtl.Const(int(helper_functions.float_to_ieee_hp(0.382683432365), 2))
+            twiddle_imag |= pyrtl.Const(int(helper_functions.float_to_ieee_hp(-0.923879532511), 2))
         with k == 4:
-            twiddle_real |= int(helper_functions.float_to_ieee_hp(0), 2)
-            twiddle_imag |= int(helper_functions.float_to_ieee_hp(-1), 2)
+            twiddle_real |= pyrtl.Const(int(helper_functions.float_to_ieee_hp(0), 2))
+            twiddle_imag |= pyrtl.Const(int(helper_functions.float_to_ieee_hp(-1), 2))
         with k == 5:
-            twiddle_real |= int(helper_functions.float_to_ieee_hp(-0.382683432365), 2)
-            twiddle_imag |= int(helper_functions.float_to_ieee_hp(-0.923879532511), 2)
+            twiddle_real |= pyrtl.Const(int(helper_functions.float_to_ieee_hp(-0.382683432365), 2))
+            twiddle_imag |= pyrtl.Const(int(helper_functions.float_to_ieee_hp(-0.923879532511), 2))
         with k == 6:
-            twiddle_real |= int(helper_functions.float_to_ieee_hp(-0.707106781187), 2)
-            twiddle_imag |= int(helper_functions.float_to_ieee_hp(-0.707106781187), 2)
+            twiddle_real |= pyrtl.Const(int(helper_functions.float_to_ieee_hp(-0.707106781187), 2))
+            twiddle_imag |= pyrtl.Const(int(helper_functions.float_to_ieee_hp(-0.707106781187), 2))
         with k == 7:
-            twiddle_real |= int(helper_functions.float_to_ieee_hp(-0.382683432365), 2)
-            twiddle_imag |= int(helper_functions.float_to_ieee_hp(-0.382683432365), 2)
+            twiddle_real |= pyrtl.Const(int(helper_functions.float_to_ieee_hp(-0.923879532511), 2))
+            twiddle_imag |= pyrtl.Const(int(helper_functions.float_to_ieee_hp(-0.382683432365), 2))
 
     add_result = ComplexAdd(input_B, ComplexMul(Complex(twiddle_real, twiddle_imag), input_A))
     add_output.real.next <<= add_result.real
@@ -61,7 +67,7 @@ def butterfly(input_A, index, buffer_real, buffer_imag, s, k, mod_to):
     sub_output.real.next <<= sub_result.real
     sub_output.imag.next <<= sub_result.imag
 
-    buffer_real[m] <<= input_A.real
-    buffer_imag[m] <<= input_A.imag
+    buffer_real[m_plus_one] <<= input_A.real
+    buffer_imag[m_plus_one] <<= input_A.imag
 
     return add_output, sub_output

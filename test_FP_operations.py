@@ -51,3 +51,6 @@ Test_FP_mul(2.0, 3.0, 6.0)
 Test_FP_mul(7, 3.0, 21)
 Test_FP_mul(1.5, 4.5, 6.75)
 Test_FP_mul(8.3, 22.9, 190.07)
+
+
+print(ieee_hp_to_float(int(float_to_ieee_hp(0.923879532511), 2)))

@@ -1,8 +1,11 @@
 import pyrtl
 
+from helper_functions import float_to_ieee_hp
 from operations_butterfly import butterfly
 
 ######################################## STAGE 1 BUFFER #########################################
+from operations_complex import ComplexMul, Complex
+
 buffer_10_real = pyrtl.MemBlock(bitwidth=16, addrwidth=3, asynchronous=True, name="buffer_10_real")
 buffer_10_imag = pyrtl.MemBlock(bitwidth=16, addrwidth=3, asynchronous=True, name="buffer_10_imag")
 
@@ -52,7 +55,8 @@ buffer_47_real = pyrtl.MemBlock(bitwidth=16, addrwidth=3, asynchronous=True, nam
 buffer_47_imag = pyrtl.MemBlock(bitwidth=16, addrwidth=3, asynchronous=True, name="buffer_47_imag")
 
 cycle = pyrtl.Register(bitwidth=4, name="cycle")
-cycle.next <<= cycle + 1 # Increment counter each cycle
+cycle.next <<= cycle + 1  # Increment counter each cycle
+
 
 def top(input_A):
     n = pyrtl.Const(4, bitwidth=3)  # 4 STFT stages for 16 samples
@@ -83,4 +87,19 @@ def top(input_A):
     x52, x53 = butterfly(x36, cycle, buffer_46_real, buffer_46_imag, s4, pyrtl.Const(3), pyrtl.Const(1))
     x54, x55 = butterfly(x37, cycle, buffer_47_real, buffer_47_imag, s4, pyrtl.Const(7), pyrtl.Const(1))
 
-    return x40, x48, x44, x52, x42, x50, x46, x54, x41, x49, x45, x53, x43, x51, x47, x55
+    return ComplexMul(x40, Complex(pyrtl.Const(int(float_to_ieee_hp(1), 2), bitwidth=16), pyrtl.Const(int(float_to_ieee_hp(0), 2), bitwidth=16))), \
+           ComplexMul(x48, Complex(pyrtl.Const(int(float_to_ieee_hp(8), 2), bitwidth=16), pyrtl.Const(int(float_to_ieee_hp(0), 2), bitwidth=16))), \
+           ComplexMul(x44, Complex(pyrtl.Const(int(float_to_ieee_hp(4), 2), bitwidth=16), pyrtl.Const(int(float_to_ieee_hp(0), 2), bitwidth=16))), \
+           ComplexMul(x52, Complex(pyrtl.Const(int(float_to_ieee_hp(8), 2), bitwidth=16), pyrtl.Const(int(float_to_ieee_hp(0), 2), bitwidth=16))), \
+           ComplexMul(x42, Complex(pyrtl.Const(int(float_to_ieee_hp(2), 2), bitwidth=16), pyrtl.Const(int(float_to_ieee_hp(0), 2), bitwidth=16))), \
+           ComplexMul(x50, Complex(pyrtl.Const(int(float_to_ieee_hp(8), 2), bitwidth=16), pyrtl.Const(int(float_to_ieee_hp(0), 2), bitwidth=16))), \
+           ComplexMul(x46, Complex(pyrtl.Const(int(float_to_ieee_hp(4), 2), bitwidth=16), pyrtl.Const(int(float_to_ieee_hp(0), 2), bitwidth=16))), \
+           ComplexMul(x54, Complex(pyrtl.Const(int(float_to_ieee_hp(8), 2), bitwidth=16), pyrtl.Const(int(float_to_ieee_hp(0), 2), bitwidth=16))), \
+           x41, \
+           ComplexMul(x49, Complex(pyrtl.Const(int(float_to_ieee_hp(8), 2), bitwidth=16), pyrtl.Const(int(float_to_ieee_hp(0), 2), bitwidth=16))), \
+           ComplexMul(x45, Complex(pyrtl.Const(int(float_to_ieee_hp(4), 2), bitwidth=16), pyrtl.Const(int(float_to_ieee_hp(0), 2), bitwidth=16))), \
+           ComplexMul(x53, Complex(pyrtl.Const(int(float_to_ieee_hp(8), 2), bitwidth=16), pyrtl.Const(int(float_to_ieee_hp(0), 2), bitwidth=16))), \
+           ComplexMul(x43, Complex(pyrtl.Const(int(float_to_ieee_hp(2), 2), bitwidth=16), pyrtl.Const(int(float_to_ieee_hp(0), 2), bitwidth=16))), \
+           ComplexMul(x51, Complex(pyrtl.Const(int(float_to_ieee_hp(8), 2), bitwidth=16), pyrtl.Const(int(float_to_ieee_hp(0), 2), bitwidth=16))), \
+           ComplexMul(x47, Complex(pyrtl.Const(int(float_to_ieee_hp(4), 2), bitwidth=16), pyrtl.Const(int(float_to_ieee_hp(0), 2), bitwidth=16))), \
+           ComplexMul(x55, Complex(pyrtl.Const(int(float_to_ieee_hp(8), 2), bitwidth=16), pyrtl.Const(int(float_to_ieee_hp(0), 2), bitwidth=16)))
